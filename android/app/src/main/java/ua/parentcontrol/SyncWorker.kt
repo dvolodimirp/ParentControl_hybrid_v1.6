@@ -30,14 +30,21 @@ object SyncScheduler {
 }
 
 class SyncWorker(c: Context, params: WorkerParameters) : Worker(c, params) {
-    override fun doWork(): Result = try {
-        if (sp(applicationContext).getString("token", null).isNullOrBlank()) return Result.success()
-        SyncEngine.sync(applicationContext)
-        Result.success()
-    } catch (e: Exception) {
-        if (e.message?.startsWith("HTTP 401") == true) {
-            sp(applicationContext).edit().remove("token").apply()
-            Result.failure()
-        } else Result.retry()
+    override fun doWork(): Result {
+        return try {
+            if (sp(applicationContext).getString("token", null).isNullOrBlank()) {
+                Result.success()
+            } else {
+                SyncEngine.sync(applicationContext)
+                Result.success()
+            }
+        } catch (e: Exception) {
+            if (e.message?.startsWith("HTTP 401") == true) {
+                sp(applicationContext).edit().remove("token").apply()
+                Result.failure()
+            } else {
+                Result.retry()
+            }
+        }
     }
 }
